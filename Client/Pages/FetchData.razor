@@ -1,6 +1,6 @@
 ﻿@page "/fetchdata"
 @using StronglyTypedApi.Shared
-@inject HttpClient Http
+@inject IWeatherForecastApi Api
 
 <PageTitle>Weather forecast</PageTitle>
 
@@ -8,11 +8,25 @@
 
 <p>This component demonstrates fetching data from the server.</p>
 
-@if (forecasts == null)
+<div class="form-group">
+    <label for="days">NUmber of days to fetch</label>
+    <InputNumber id="days" @bind-Value="@_days" class="form-control"/>
+</div>
+<button class="btn btn-primary my-4" @onclick="Fetch">Fetch data</button>
+
+@if (_errorTitle != null)
+{
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">@_errorTitle</h4>
+        <p>@_errorDetails</p>
+    </div>
+}
+
+@if (_loading)
 {
     <p><em>Loading...</em></p>
 }
-else
+@if(_forecasts != null)
 {
     <table class="table">
         <thead>
@@ -24,7 +38,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
+            @foreach (var forecast in _forecasts)
             {
                 <tr>
                     <td>@forecast.Date.ToShortDateString()</td>
@@ -38,10 +52,35 @@ else
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private WeatherForecast[]? _forecasts;
+    private string? _errorTitle, _errorDetails;
+    private bool _loading = false;
+    private int _days = 5;
 
-    protected override async Task OnInitializedAsync()
+    private async Task Fetch()
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("WeatherForecast");
+        _errorTitle = null;
+        try
+        {
+            _loading = true;
+            _forecasts = await Api.Fetch(new WeatherForecastRequest()
+            {
+                    Days = _days
+            }, CancellationToken.None);
+        }
+        catch (HttpRequestException re)
+        {
+            _errorTitle = $"HTTP {(int?)re.StatusCode}/{re.StatusCode}";
+            _errorDetails = re.Message;
+        }
+        catch (Exception ex)
+        {
+            _errorTitle = ex.GetType().FullName;
+            _errorDetails = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using StronglyTypedApi.Client;
+using StronglyTypedApi.Client.ApiClient;
+using StronglyTypedApi.Shared;
 
 namespace StronglyTypedApi.Client
 {
@@ -13,8 +15,12 @@ namespace StronglyTypedApi.Client
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddTransient<IWeatherForecastApi, WeatherForecastApiClient>();
 
             await builder.Build().RunAsync();
         }
+
+
+
     }
 }
